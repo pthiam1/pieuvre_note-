@@ -6,9 +6,7 @@ import {
   KeyboardAvoidingView,
   Modal,
   Platform,
-  SafeAreaView,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -17,6 +15,7 @@ import {
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 import { useSQLiteContext } from 'expo-sqlite';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import DeliveryCard from '../components/DeliveryCard';
 import DeliveryInfoModal from '../components/DeliveryInfoModal';
 import DestinationAutocomplete from '../components/DestinationAutocomplete';
@@ -30,6 +29,7 @@ type FormModal = 'delivery' | 'chantier' | 'relais' | null;
 
 export default function HomeScreen() {
   const db = useSQLiteContext();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('Agenda');
   const [date, setDate] = useState(today());
   const [places, setPlaces] = useState<Place[]>([]);
@@ -53,7 +53,7 @@ export default function HomeScreen() {
   const [notes, setNotes] = useState('');
 
   const theme = darkMode ? themes.dark : themes.light;
-  const styles = createStyles(theme);
+  const styles = createStyles(theme, insets.bottom);
 
   async function refresh() {
     const [savedPlaces, savedDeliveries, savedTheme] = await Promise.all([
@@ -254,7 +254,7 @@ export default function HomeScreen() {
           : 'Sites de relais';
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safe}>
       <ExpoStatusBar style={darkMode ? 'light' : 'dark'} />
       <View style={styles.header}>
         <View>
@@ -718,12 +718,11 @@ export default function HomeScreen() {
   );
 }
 
-function createStyles(theme: (typeof themes)['light']) {
+function createStyles(theme: (typeof themes)['light'], bottomInset: number) {
   return StyleSheet.create({
     safe: {
       flex: 1,
       backgroundColor: theme.background,
-      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
     },
     header: {
       backgroundColor: theme.surface,
@@ -855,14 +854,14 @@ function createStyles(theme: (typeof themes)['light']) {
     searchInput: { flex: 1, color: theme.text, fontSize: 14, paddingVertical: 8 },
     searchClear: { color: theme.muted, fontSize: 15, padding: 5 },
     bottom: {
-      height: 69,
+      height: 69 + bottomInset,
       backgroundColor: theme.surface,
       borderTopWidth: 1,
       borderTopColor: theme.border,
       flexDirection: 'row',
       justifyContent: 'space-around',
       alignItems: 'center',
-      paddingBottom: Platform.OS === 'ios' ? 8 : 0,
+      paddingBottom: bottomInset || (Platform.OS === 'ios' ? 8 : 0),
     },
     navItem: { alignItems: 'center', justifyContent: 'center', minWidth: 65 },
     navIcon: { fontSize: 21, color: theme.muted },
