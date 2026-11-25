@@ -38,6 +38,7 @@ export default function HomeScreen() {
   const [modal, setModal] = useState<FormModal>(null);
   const [aboutVisible, setAboutVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deliverySearchQuery, setDeliverySearchQuery] = useState('');
   const [editingPlaceId, setEditingPlaceId] = useState<number | null>(null);
   const [editingDeliveryId, setEditingDeliveryId] = useState<number | null>(null);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
@@ -233,6 +234,19 @@ export default function HomeScreen() {
   }
 
   const dayDeliveries = deliveries.filter(delivery => delivery.date === date);
+  const normalizedDeliverySearch = deliverySearchQuery.trim().toLocaleLowerCase('fr');
+  const filteredDeliveries = deliveries.filter(delivery => {
+    if (!normalizedDeliverySearch) return true;
+    const contact = places.find(place => place.id === delivery.destinationId)?.contact ?? '';
+    return [
+      delivery.destinationName,
+      delivery.address,
+      delivery.date,
+      formatDate(delivery.date),
+      delivery.notes,
+      contact,
+    ].some(value => value.toLocaleLowerCase('fr').includes(normalizedDeliverySearch));
+  });
   const listPlaces = places.filter(place =>
     (tab === 'Chantiers' ? place.kind === 'chantier' : place.kind === 'relais') &&
     (tab !== 'Chantiers' ||
@@ -356,6 +370,7 @@ export default function HomeScreen() {
                 contact={places.find(place => place.id === item.destinationId)?.contact}
                 onEdit={() => editDelivery(item)}
                 onDelete={() => void removeDelivery(item.id)}
+                onPress={() => setSelectedDelivery(item)}
               />
             )}
           />
@@ -363,31 +378,58 @@ export default function HomeScreen() {
       ) : null}
 
       {tab === 'Livraisons' ? (
-        <FlatList
-          data={deliveries}
-          keyExtractor={item => String(item.id)}
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <EmptyState
-              theme={theme}
-              title="Aucune livraison enregistrée"
-              text="Tes livraisons apparaîtront ici."
+        <>
+          <View style={styles.searchWrap}>
+            <Text style={styles.searchIcon}>⌕</Text>
+            <TextInput
+              value={deliverySearchQuery}
+              onChangeText={setDeliverySearchQuery}
+              placeholder="Rechercher une livraison..."
+              placeholderTextColor={theme.muted}
+              style={styles.searchInput}
+              returnKeyType="search"
+              accessibilityLabel="Rechercher une livraison"
             />
-          }
-          renderItem={({ item }) => (
-            <View>
-              <Text style={styles.dateLabel}>{formatDate(item.date)}</Text>
-              <DeliveryCard
-                item={item}
+            {deliverySearchQuery ? (
+              <TouchableOpacity
+                onPress={() => setDeliverySearchQuery('')}
+                accessibilityRole="button"
+                accessibilityLabel="Effacer la recherche"
+              >
+                <Text style={styles.searchClear}>✕</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          <FlatList
+            data={filteredDeliveries}
+            keyExtractor={item => String(item.id)}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <EmptyState
                 theme={theme}
-                contact={places.find(place => place.id === item.destinationId)?.contact}
-                onEdit={() => editDelivery(item)}
-                onDelete={() => void removeDelivery(item.id)}
-                onPress={() => setSelectedDelivery(item)}
+                title={deliverySearchQuery ? 'Aucune livraison trouvée' : 'Aucune livraison enregistrée'}
+                text={
+                  deliverySearchQuery
+                    ? 'Essaie un autre nom, une adresse, une date ou un contact.'
+                    : 'Tes livraisons apparaîtront ici.'
+                }
               />
-            </View>
-          )}
-        />
+            }
+            renderItem={({ item }) => (
+              <View>
+                <Text style={styles.dateLabel}>{formatDate(item.date)}</Text>
+                <DeliveryCard
+                  item={item}
+                  theme={theme}
+                  contact={places.find(place => place.id === item.destinationId)?.contact}
+                  onEdit={() => editDelivery(item)}
+                  onDelete={() => void removeDelivery(item.id)}
+                  onPress={() => setSelectedDelivery(item)}
+                />
+              </View>
+            )}
+          />
+        </>
       ) : null}
 
       {tab === 'Chantiers' || tab === 'Relais' ? (
@@ -481,7 +523,7 @@ export default function HomeScreen() {
 
       <Modal visible={modal !== null} animationType="slide" transparent onRequestClose={() => setModal(null)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.overlay}
         >
           <View style={styles.sheet}>
@@ -497,7 +539,10 @@ export default function HomeScreen() {
                 <Text style={styles.close}>✕</Text>
               </TouchableOpacity>
             </View>
-            <ScrollView keyboardShouldPersistTaps="handled">
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+            >
               {modal === 'delivery' ? (
                 <>
                   <Field
