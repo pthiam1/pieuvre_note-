@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "Pieuvre Note",
+    "slug": "pieuvre-note",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./Logo-Pieuvre-Note.png",
+    "splash": {
+      "image": "./Logo-Pieuvre-Note.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F8F7FC"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "fr.pieuvredelestuaire.pieuvrenote"
+    },
+    "android": {
+      "package": "fr.pieuvredelestuaire.pieuvrenote",
+      "adaptiveIcon": {
+        "foregroundImage": "./Logo-Pieuvre-Note.png",
+        "backgroundColor": "#4B16A8"
+      }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-status-bar"
+    ]
+  }
+}
